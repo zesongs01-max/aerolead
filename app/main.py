@@ -11,7 +11,7 @@ from app.database import (
     init_db, SessionLocal, Tenant, User, Company, Person,
     DomainEdge, EmploymentEdge, TechEdge, FieldMetadata, CRMSync
 )
-from app.routes import api, web
+from app.routes import api, web, discovery
 
 app = FastAPI(
     title="Apollo-Like Lead Intelligence Platform",
@@ -31,6 +31,7 @@ app.add_middleware(
 # Register routes
 app.include_router(api.router)
 app.include_router(web.router)
+app.include_router(discovery.router)
 
 # Serve Frontend static assets
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))

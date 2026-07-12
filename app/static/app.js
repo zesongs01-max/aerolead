@@ -66,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initBillingEvents();
     initDevConsoleEvents();
     initModals();
+    initDiscoveryPanel();
 });
 
 // View Routing Router
@@ -815,6 +816,139 @@ async function inspectCompany(companyId) {
 }
 
 window.inspectCompany = inspectCompany;
+
+// ============================================================
+// 🌐 Web Discovery Engine
+// ============================================================
+let _discoveryJobId = null;
+let _discoveryPollInterval = null;
+
+function initDiscoveryPanel() {
+    const btnDiscover = document.getElementById("btn-discover-web");
+    if (btnDiscover) {
+        btnDiscover.addEventListener("click", () => {
+            const panel = document.getElementById("discovery-panel");
+            panel.style.display = panel.style.display === "none" ? "block" : "none";
+        });
+    }
+    const btnClose = document.getElementById("btn-close-discovery");
+    if (btnClose) {
+        btnClose.addEventListener("click", () => {
+            document.getElementById("discovery-panel").style.display = "none";
+        });
+    }
+    const btnRun = document.getElementById("btn-run-discovery");
+    if (btnRun) {
+        btnRun.addEventListener("click", runDiscovery);
+    }
+}
+
+async function runDiscovery() {
+    const query = document.getElementById("discovery-query").value.trim();
+    const location = document.getElementById("discovery-location").value.trim();
+    const techsRaw = document.getElementById("discovery-techs").value.trim();
+    const required_techs = techsRaw ? techsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
+
+    if (!query) {
+        alert("Please enter what type of companies to find (e.g. 'auto parts')");
+        return;
+    }
+
+    const progDiv = document.getElementById("discovery-progress");
+    const logDiv = document.getElementById("discovery-log");
+    const spinner = document.getElementById("discovery-spinner");
+    progDiv.style.display = "block";
+    logDiv.innerHTML = "";
+    spinner.style.display = "inline-block";
+
+    const btnRun = document.getElementById("btn-run-discovery");
+    btnRun.disabled = true;
+    btnRun.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" style="margin-right:6px;"></i>Scanning...';
+
+    try {
+        const startRes = await fetch("/web/discover/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query, location, required_techs, max_results: 15 }),
+        });
+        const startData = await startRes.json();
+        if (startData.error) {
+            _logDiscovery("❌ Error: " + startData.error);
+            _finishDiscovery();
+            return;
+        }
+        _discoveryJobId = startData.job_id;
+        _logDiscovery(`🚀 Started scanning for: "${query}" in "${location || 'anywhere'}"...`);
+        _discoveryPollInterval = setInterval(_pollDiscovery, 2000);
+    } catch (err) {
+        _logDiscovery("❌ Failed to start discovery: " + err.message);
+        _finishDiscovery();
+    }
+}
+
+async function _pollDiscovery() {
+    if (!_discoveryJobId) return;
+    try {
+        const res = await fetch(`/web/discover/status/${_discoveryJobId}`);
+        const data = await res.json();
+
+        const logDiv = document.getElementById("discovery-log");
+        if (data.progress && data.progress.length > 0) {
+            const currentCount = logDiv.querySelectorAll(".log-line").length;
+            for (let i = currentCount; i < data.progress.length; i++) {
+                _logDiscovery(data.progress[i]);
+            }
+        }
+
+        if (data.status === "complete") {
+            clearInterval(_discoveryPollInterval);
+            _discoveryPollInterval = null;
+            _finishDiscovery();
+            const result = data.result || {};
+            _logDiscovery(`🎉 Done! Found ${result.companies_found || 0} matching companies with ${result.contacts_found || 0} contacts.`);
+            if (result.companies_found > 0) {
+                _logDiscovery("🔄 Refreshing results...");
+                state.searchTab = "companies";
+                const tabC = document.getElementById("search-tab-companies");
+                const tabP = document.getElementById("search-tab-people");
+                if (tabC && tabP) {
+                    tabC.classList.add("active"); tabP.classList.remove("active");
+                    document.getElementById("company-results-table").style.display = "table";
+                    document.getElementById("search-results-table").style.display = "none";
+                }
+                state.searchQuery = "";
+                state.searchFilters = { company_locations:[], seniorities:[], email_status:[], technologies_any:[], employee_ranges:[], revenue_ranges:[], industries:[] };
+                document.getElementById("search-query").value = "";
+                await triggerSearch();
+            }
+        } else if (data.status === "error") {
+            clearInterval(_discoveryPollInterval);
+            _discoveryPollInterval = null;
+            _logDiscovery("❌ Discovery failed: " + (data.error || "Unknown error"));
+            _finishDiscovery();
+        }
+    } catch (err) {
+        console.error("Poll error:", err);
+    }
+}
+
+function _logDiscovery(msg) {
+    const logDiv = document.getElementById("discovery-log");
+    if (!logDiv) return;
+    const line = document.createElement("div");
+    line.className = "log-line";
+    line.style.cssText = "border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:2px;";
+    line.textContent = msg;
+    logDiv.appendChild(line);
+    logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+function _finishDiscovery() {
+    const btnRun = document.getElementById("btn-run-discovery");
+    const spinner = document.getElementById("discovery-spinner");
+    if (btnRun) { btnRun.disabled = false; btnRun.innerHTML = '<i class="fa-solid fa-satellite-dish" style="margin-right:6px;"></i>Discover'; }
+    if (spinner) spinner.style.display = "none";
+}
 
 // Enrichment Waterfall Trigger UI
 function initEnrichmentEvents() {

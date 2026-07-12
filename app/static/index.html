@@ -205,9 +205,50 @@
                             <button type="button" class="btn btn-primary" id="btn-search-trigger">Search</button>
                         </div>
                         
+                        <!-- 🌐 Web Discovery Engine Panel -->
+                        <div id="discovery-panel" style="display:none; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06)); border: 1px solid rgba(99,102,241,0.25); border-radius: 14px; padding: 18px 20px; margin: 12px 0 16px 0;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--accent-gradient); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">
+                                    <i class="fa-solid fa-globe"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Discover Companies on the Web</div>
+                                    <div style="font-size: 11px; color: var(--text-muted);">Scans the internet for real companies matching your tech stack & location filters</div>
+                                </div>
+                                <button type="button" id="btn-close-discovery" style="margin-left:auto; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 180px;">
+                                    <label style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px;">WHAT TO FIND</label>
+                                    <input type="text" id="discovery-query" placeholder='e.g. "auto parts" or "clothing store"' style="width:100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-secondary); color: var(--text-primary); font-size: 13px;">
+                                </div>
+                                <div style="flex: 1; min-width: 140px;">
+                                    <label style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px;">LOCATION</label>
+                                    <input type="text" id="discovery-location" placeholder='e.g. "United Kingdom"' style="width:100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-secondary); color: var(--text-primary); font-size: 13px;">
+                                </div>
+                                <div style="flex: 1; min-width: 160px;">
+                                    <label style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px;">MUST USE TECHNOLOGIES</label>
+                                    <input type="text" id="discovery-techs" placeholder='e.g. "Shopify, Klaviyo"' style="width:100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-secondary); color: var(--text-primary); font-size: 13px;">
+                                </div>
+                                <button type="button" id="btn-run-discovery" class="btn btn-primary" style="padding: 9px 18px; white-space:nowrap; flex-shrink:0;">
+                                    <i class="fa-solid fa-satellite-dish" style="margin-right:6px;"></i>Discover
+                                </button>
+                            </div>
+
+                            <!-- Progress Log -->
+                            <div id="discovery-progress" style="display:none; margin-top: 14px; background: var(--bg-primary); border-radius: 8px; padding: 12px; border: 1px solid var(--border-subtle);">
+                                <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-circle-notch fa-spin" id="discovery-spinner" style="margin-right: 6px;"></i>Discovery Log
+                                </div>
+                                <div id="discovery-log" style="font-size: 12px; color: var(--text-secondary); font-family: monospace; max-height: 160px; overflow-y: auto; line-height: 1.8;"></div>
+                            </div>
+                        </div>
+
                         <div class="results-actions-row">
                             <div class="results-count" id="search-results-count">Showing 0 results</div>
                             <div class="bulk-actions">
+                                <button type="button" class="btn btn-secondary" id="btn-discover-web" title="Discover real companies from the web"><i class="fa-solid fa-satellite-dish"></i> Discover on Web</button>
                                 <button type="button" class="btn btn-secondary" id="btn-bulk-save" disabled><i class="fa-solid fa-bookmark"></i> Save to List</button>
                                 <button type="button" class="btn btn-secondary" id="btn-bulk-crm" disabled><i class="fa-solid fa-rotate"></i> Sync to CRM</button>
                             </div>
