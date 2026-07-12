@@ -77,6 +77,15 @@ def apply_people_search_filters(db: Session, base_query, query_text: str, filter
 
     # Suppression filter: exclude suppressed by default unless requested
     q = q.filter(Person.is_suppressed == False)
+
+    if "only_discovered" in filters and filters["only_discovered"]:
+        q = q.filter(Person.person_id.like("pr_disc_%"))
+    elif "only_seeds" in filters and filters["only_seeds"]:
+        q = q.filter(~Person.person_id.like("pr_disc_%"))
+
+    if "person_ids" in filters and filters["person_ids"]:
+        q = q.filter(Person.person_id.in_(filters["person_ids"]))
+
     return q
 
 def search_people_engine(db: Session, search_payload: dict) -> dict:
@@ -244,7 +253,15 @@ def apply_company_search_filters(db: Session, base_query, query_text: str, filte
             func.lower(TechEdge.tech_slug).in_([t.lower() for t in filters["technologies_any"]])
         )
         q = q.filter(Company.company_id.in_(tech_subs))
-        
+
+    if "only_discovered" in filters and filters["only_discovered"]:
+        q = q.filter(Company.company_id.like("co_disc_%"))
+    elif "only_seeds" in filters and filters["only_seeds"]:
+        q = q.filter(~Company.company_id.like("co_disc_%"))
+
+    if "company_ids" in filters and filters["company_ids"]:
+        q = q.filter(Company.company_id.in_(filters["company_ids"]))
+
     return q
 
 def calculate_company_facets(db: Session, subquery) -> dict:

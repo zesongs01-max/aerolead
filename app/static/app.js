@@ -5,6 +5,8 @@ const state = {
     stats: {},
     activeView: "view-dashboard",
     directoryMode: false,
+    lastDiscoveredCompanyIds: null,
+    lastDiscoveredPersonIds: null,
     
     // Search parameters
     searchTab: "people",
@@ -932,6 +934,19 @@ async function _pollDiscovery() {
             _finishDiscovery();
             const result = data.result || {};
             _logDiscovery(`🎉 Done! Found ${result.companies_found || 0} matching companies with ${result.contacts_found || 0} contacts.`);
+            
+            const companyIds = (result.companies || []).map(c => c.company_id);
+            const personIds = [];
+            (result.companies || []).forEach(c => {
+                if (c.contacts) {
+                    c.contacts.forEach(p => {
+                        if (p.person_id) personIds.push(p.person_id);
+                    });
+                }
+            });
+            state.lastDiscoveredCompanyIds = companyIds.length > 0 ? companyIds : ["__none__"];
+            state.lastDiscoveredPersonIds = personIds.length > 0 ? personIds : ["__none__"];
+
             if (result.companies_found > 0) {
                 _logDiscovery("🔄 Refreshing results...");
                 state.searchTab = "companies";
