@@ -330,17 +330,14 @@ def seed_database(db: Session):
     db.commit()
     print("Database seeding completed.")
 
-@app.on_event("startup")
-def startup_event():
-    # Setup folders
+# Synchronous top-level database initialization to bypass ASGI event-loop deadlocks under uWSGI
+try:
     os.makedirs(os.path.dirname(api.__file__), exist_ok=True)
-    
-    # Initialize database schemas
     init_db()
-    
-    # Seed data
     db = SessionLocal()
     try:
         seed_database(db)
     finally:
         db.close()
+except Exception as e:
+    print(f"Error during database initialization: {str(e)}")
