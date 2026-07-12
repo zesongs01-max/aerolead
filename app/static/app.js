@@ -444,13 +444,31 @@ window.removeTechFilter = function(tech) {
 
 async function triggerSearch() {
     const endpoint = state.searchTab === "people" ? "/web/search/people" : "/web/search/companies";
+    
+    const activeFilters = {
+        ...state.searchFilters,
+        only_discovered: !state.directoryMode,
+        only_seeds: state.directoryMode
+    };
+    
+    // In prospect search mode, limit ONLY to the most recently discovered IDs
+    if (!state.directoryMode) {
+        if (state.lastDiscoveredCompanyIds !== null) {
+            activeFilters.company_ids = state.lastDiscoveredCompanyIds;
+        } else {
+            activeFilters.company_ids = ["__none__"];
+        }
+        
+        if (state.lastDiscoveredPersonIds !== null) {
+            activeFilters.person_ids = state.lastDiscoveredPersonIds;
+        } else {
+            activeFilters.person_ids = ["__none__"];
+        }
+    }
+    
     const payload = {
         query: state.searchQuery,
-        filters: {
-            ...state.searchFilters,
-            only_discovered: !state.directoryMode,
-            only_seeds: state.directoryMode
-        },
+        filters: activeFilters,
         page: 1,
         page_size: 25
     };
