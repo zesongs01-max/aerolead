@@ -915,7 +915,7 @@ async function runDiscovery() {
         const startRes = await fetch("/web/discover/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query, location, required_techs, max_results: 15 }),
+            body: JSON.stringify({ query, location, required_techs, max_results: 35 }),
         });
         const startData = await startRes.json();
         if (startData.error) {
@@ -950,6 +950,8 @@ async function _pollDiscovery() {
             clearInterval(_discoveryPollInterval);
             _discoveryPollInterval = null;
             _finishDiscovery();
+            const panel = document.getElementById("discovery-panel");
+            if (panel) panel.style.display = "none";
             const result = data.result || {};
             _logDiscovery(`🎉 Done! Found ${result.companies_found || 0} matching companies with ${result.contacts_found || 0} contacts.`);
             
