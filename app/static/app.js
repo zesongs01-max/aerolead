@@ -975,9 +975,23 @@ async function _pollDiscovery() {
                     document.getElementById("company-results-table").style.display = "table";
                     document.getElementById("search-results-table").style.display = "none";
                 }
+                
+                const locInput = document.getElementById("discovery-location").value.trim();
+                const techInput = document.getElementById("discovery-techs").value.trim();
+                
                 state.searchQuery = "";
-                state.searchFilters = { company_locations:[], seniorities:[], email_status:[], technologies_any:[], employee_ranges:[], revenue_ranges:[], industries:[] };
+                state.searchFilters = {
+                    company_locations: locInput ? [locInput] : [],
+                    seniorities: [],
+                    email_status: [],
+                    technologies_any: techInput ? techInput.split(",").map(t => t.trim()).filter(Boolean) : [],
+                    employee_ranges: [],
+                    revenue_ranges: [],
+                    industries: []
+                };
+                
                 document.getElementById("search-query").value = "";
+                renderTechTags();
                 await triggerSearch();
             }
         } else if (data.status === "error") {

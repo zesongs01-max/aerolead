@@ -134,8 +134,8 @@ def search_people_engine(db: Session, search_payload: dict) -> dict:
             if order_col is not None:
                 q = q.order_by(desc(order_col) if direction == "desc" else asc(order_col))
     else:
-        # Default sort by last_verified_at desc, then confidence score
-        q = q.order_by(desc(Person.last_verified_at), desc(Person.confidence_score))
+        # Default sort by confidence score desc, then last_verified_at desc
+        q = q.order_by(desc(Person.confidence_score), desc(Person.last_verified_at))
 
     # 5. Pagination
     total_count = q.count()
@@ -300,7 +300,7 @@ def search_companies_engine(db: Session, search_payload: dict) -> dict:
 
     total_count = q.count()
     offset = (page - 1) * page_size
-    companies = q.order_by(desc(Company.last_verified_at), desc(Company.confidence_score)).offset(offset).limit(page_size).all()
+    companies = q.order_by(desc(Company.confidence_score), desc(Company.last_verified_at)).offset(offset).limit(page_size).all()
     
     data = []
     for c in companies:
