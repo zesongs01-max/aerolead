@@ -4,6 +4,7 @@ const state = {
     tenants: [],
     stats: {},
     activeView: "view-dashboard",
+    directoryMode: false,
     
     // Search parameters
     searchTab: "people",
@@ -90,13 +91,34 @@ function switchView(viewId) {
     document.querySelectorAll(".view-panel").forEach(panel => {
         panel.classList.remove("active");
     });
-    const activePanel = document.getElementById(viewId);
-    activePanel.classList.add("active");
+    
+    let targetViewId = viewId;
+    if (viewId === "view-directory") {
+        targetViewId = "view-search";
+        state.directoryMode = true;
+        
+        // Hide discovery button and panel
+        const btnDiscover = document.getElementById("btn-discover-web");
+        if (btnDiscover) btnDiscover.style.display = "none";
+        const panel = document.getElementById("discovery-panel");
+        if (panel) panel.style.display = "none";
+    } else {
+        if (viewId === "view-search") {
+            state.directoryMode = false;
+            // Show discovery button
+            const btnDiscover = document.getElementById("btn-discover-web");
+            if (btnDiscover) btnDiscover.style.display = "inline-flex";
+        }
+    }
+    
+    const activePanel = document.getElementById(targetViewId);
+    if (activePanel) activePanel.classList.add("active");
     
     // Update Header Page Title
     const titleMap = {
         "view-dashboard": "Dashboard Overview",
         "view-search": "Prospect Prospecting Hub",
+        "view-directory": "Internal Database Directory",
         "view-enrichment": "Enrichment Waterfall Pipeline",
         "view-lists": "Saved Audience Segments",
         "view-crm": "GTM Integrations Setup",
@@ -108,7 +130,7 @@ function switchView(viewId) {
     // Trigger view-specific loads
     if (viewId === "view-dashboard") {
         loadDashboardStats();
-    } else if (viewId === "view-search") {
+    } else if (viewId === "view-search" || viewId === "view-directory") {
         triggerSearch();
     } else if (viewId === "view-lists") {
         loadSavedLists();
@@ -422,7 +444,11 @@ async function triggerSearch() {
     const endpoint = state.searchTab === "people" ? "/web/search/people" : "/web/search/companies";
     const payload = {
         query: state.searchQuery,
-        filters: state.searchFilters,
+        filters: {
+            ...state.searchFilters,
+            only_discovered: !state.directoryMode,
+            only_seeds: state.directoryMode
+        },
         page: 1,
         page_size: 25
     };
