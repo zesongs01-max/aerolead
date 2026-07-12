@@ -915,7 +915,7 @@ async function runDiscovery() {
         const startRes = await fetch("/web/discover/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query, location, required_techs, max_results: 35 }),
+            body: JSON.stringify({ query, location, required_techs, max_results: 35, tenant_id: state.activeTenantId }),
         });
         const startData = await startRes.json();
         if (startData.error) {
@@ -995,6 +995,7 @@ async function _pollDiscovery() {
                 document.getElementById("search-query").value = "";
                 renderTechTags();
                 await triggerSearch();
+                await loadTenantData();
             }
         } else if (data.status === "error") {
             clearInterval(_discoveryPollInterval);

@@ -8,7 +8,7 @@ import uuid
 from typing import Dict, Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.database import SessionLocal, Tenant
 from app.discovery import run_discovery_pipeline
 
 router = APIRouter(prefix="/web")
@@ -25,8 +25,8 @@ def get_db():
         db.close()
 
 
-def _run_job(job_id: str, query: str, location: str, required_techs: list, max_results: int):
-    """Runs the discovery pipeline in a background thread."""
+def _run_job(job_id: str, query: str, location: str, required_techs: list, max_results: int, tenant_id: str):
+    """Runs the discovery pipeline in a background thread and deducts credits."""
     db = SessionLocal()
     try:
         def on_progress(msg: str):
@@ -40,6 +40,17 @@ def _run_job(job_id: str, query: str, location: str, required_techs: list, max_r
             max_results=max_results,
             progress_callback=on_progress,
         )
+        
+        # Deduct credits: 1 credit per company found
+        companies_found = result.get("companies_found", 0)
+        if tenant_id and companies_found > 0:
+            tenant = db.query(Tenant).filter(Tenant.tenant_id == tenant_id).first()
+            if tenant:
+                charge = round(companies_found * 1.0, 2)
+                tenant.credit_balance = max(0.0, round(tenant.credit_balance - charge, 2))
+                db.commit()
+                _jobs[job_id]["progress"].append(f"💳 Charged {charge} credits for discovering {companies_found} companies.")
+
         _jobs[job_id]["status"] = "complete"
         _jobs[job_id]["result"] = result
     except Exception as e:
@@ -50,7 +61,7 @@ def _run_job(job_id: str, query: str, location: str, required_techs: list, max_r
 
 
 @router.post("/discover/start")
-def start_discovery(payload: Dict[str, Any]):
+def start_discovery(payload: Dict[str, Any], db: Session = Depends(get_db)):
     """
     Kicks off a background discovery job.
     Returns a job_id that can be polled for progress.
@@ -59,9 +70,15 @@ def start_discovery(payload: Dict[str, Any]):
     location = payload.get("location", "").strip()
     required_techs = payload.get("required_techs", [])
     max_results = int(payload.get("max_results", 15))
+    tenant_id = payload.get("tenant_id")
 
     if not query:
         return {"error": "query is required"}
+
+    if tenant_id:
+        tenant = db.query(Tenant).filter(Tenant.tenant_id == tenant_id).first()
+        if tenant and tenant.credit_balance < 1.0:
+            return {"error": "Insufficient credits to start web discovery."}
 
     job_id = uuid.uuid4().hex
     _jobs[job_id] = {
@@ -73,7 +90,7 @@ def start_discovery(payload: Dict[str, Any]):
 
     thread = threading.Thread(
         target=_run_job,
-        args=(job_id, query, location, required_techs, max_results),
+        args=(job_id, query, location, required_techs, max_results, tenant_id),
         daemon=True,
     )
     thread.start()
