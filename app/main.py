@@ -193,6 +193,26 @@ def seed_database(db: Session):
             funding_stage="series_e",
             technologies=["AWS", "React", "NodeJS", "Java", "Kubernetes", "Snowflake"],
             confidence_score=0.95
+        ),
+        Company(
+            company_id="co_106",
+            legal_name="Gymshark Ltd",
+            display_name="Gymshark",
+            domain="gymshark.com",
+            website_url="https://gymshark.com",
+            linkedin_url="https://linkedin.com/company/gymshark",
+            hq_country="United Kingdom",
+            hq_state="Solihull",
+            hq_city="Solihull",
+            employee_range="501-1000",
+            revenue_range="$100M-$500M",
+            industry="Apparel & Fashion",
+            sub_industry="Activewear",
+            founded_year=2012,
+            public_private="private",
+            funding_stage="growth",
+            technologies=["Shopify", "Klaviyo", "Google Analytics", "Zendesk", "Facebook Pixel"],
+            confidence_score=0.94
         )
     ]
     for c in companies:
@@ -298,6 +318,57 @@ def seed_database(db: Session):
             location="London, United Kingdom",
             linkedin_url="https://www.linkedin.com/in/georgehiggins",
             confidence_score=0.96
+        ),
+        Person(
+            person_id="pr_506",
+            company_id="co_106",
+            first_name="Ben",
+            last_name="Francis",
+            full_name="Ben Francis",
+            title="Founder & CEO",
+            seniority="owner",
+            department="management",
+            email="ben.francis@gymshark.com",
+            email_status="verified",
+            phone="+44-121-794-0123",
+            phone_status="verified",
+            location="Birmingham, United Kingdom",
+            linkedin_url="https://www.linkedin.com/in/benfrancis",
+            confidence_score=0.98
+        ),
+        Person(
+            person_id="pr_507",
+            company_id="co_106",
+            first_name="Sarah",
+            last_name="Jenkins",
+            full_name="Sarah Jenkins",
+            title="Head of E-commerce",
+            seniority="director",
+            department="marketing",
+            email="sarah.jenkins@gymshark.com",
+            email_status="verified",
+            phone="+44-121-794-0124",
+            phone_status="likely_valid",
+            location="London, United Kingdom",
+            linkedin_url="https://www.linkedin.com/in/sarahjenkins",
+            confidence_score=0.92
+        ),
+        Person(
+            person_id="pr_508",
+            company_id="co_106",
+            first_name="Oliver",
+            last_name="Smith",
+            full_name="Oliver Smith",
+            title="Email Marketing Specialist",
+            seniority="individual_contributor",
+            department="marketing",
+            email="oliver.smith@gymshark.com",
+            email_status="verified",
+            phone="+44-121-794-0125",
+            phone_status="verified",
+            location="Solihull, United Kingdom",
+            linkedin_url="https://www.linkedin.com/in/oliversmith",
+            confidence_score=0.88
         )
     ]
     for p in people:
