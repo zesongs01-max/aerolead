@@ -12,6 +12,7 @@ import uuid
 import datetime
 import logging
 import random
+import html as html_module
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
 from urllib.parse import urlparse, quote_plus, unquote
@@ -184,21 +185,30 @@ def _is_blocked(html: Optional[str]) -> bool:
 
 
 def _extract_urls_from_html(html: str, skip_containing: str = "") -> list:
-    """Generic URL extractor from any search result HTML."""
+    """Generic URL extractor from any search result HTML.
+    Decodes HTML entities first to avoid truncation at &#NNN; sequences.
+    """
+    # Decode HTML entities so &#46; -> . before URL parsing
+    try:
+        html = html_module.unescape(html)
+    except Exception:
+        pass
     seen = set()
     result = []
-    for href in re.findall(r'href=["\']?(https?://[^"\'>\s]{8,})', html):
+    for href in re.findall(r'href=["\']?(https?://[^\s"\'<>]{10,})', html):
         if skip_containing and skip_containing in href:
             continue
         try:
-            href = unquote(href.split('"')[0].split("'")[0])
+            href = unquote(href)
         except Exception:
             pass
+        # Strip trailing junk chars
+        href = href.rstrip("\"'><).,;")
         parsed = urlparse(href)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
             continue
-        # Must have at least one dot and a valid TLD (min 2 chars)
         netloc = parsed.netloc
+        # Must have a dot and valid TLD
         if "." not in netloc or len(netloc) < 5:
             continue
         tld = netloc.rsplit(".", 1)[-1].lower()
