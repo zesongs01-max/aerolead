@@ -40,7 +40,7 @@ os.makedirs(static_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/")
-def read_root():
+async def read_root():
     try:
         # Read index.html synchronously to prevent thread deadlocks under ASGI-to-WSGI wrappers on PythonAnywhere
         with open(os.path.join(static_dir, "index.html"), "r", encoding="utf-8") as f:
