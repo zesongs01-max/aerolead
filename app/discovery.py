@@ -128,7 +128,7 @@ SKIP_DOMAINS = {
     "etsy.com", "asos.com", "nike.com", "adidas.com",
     "temu.com", "shein.com", "zara.com", "hm.com", "primark.com",
     "next.co.uk", "marksandspencer.com", "debenhams.com",
-    "search.yahoo.com", "uk.yahoo.com",
+    "search.yahoo.com", "uk.yahoo.com", "guce.yahoo.com", "yimg.com", "s.yimg.com",
 }
 
 # ---------------------------------------------------------------------------
@@ -184,11 +184,73 @@ def _is_blocked(html: Optional[str]) -> bool:
     return any(s in hl for s in signals)
 
 
-def _extract_urls_from_html(html: str, skip_containing: str = "") -> list:
-    """Generic URL extractor from any search result HTML.
-    Decodes HTML entities first to avoid truncation at &#NNN; sequences.
+def _valid_base_url(url: str, seen: set) -> Optional[str]:
     """
-    # Decode HTML entities so &#46; -> . before URL parsing
+    Returns the clean base URL (scheme+netloc) if it passes all validations.
+    Returns None if it's junk, a skip-domain, already seen, or has invalid TLD.
+    """
+    try:
+        url = url.strip().rstrip("\"'><).,;\\")
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return None
+        netloc = parsed.netloc.lower()
+        if not netloc or "." not in netloc or len(netloc) < 5:
+            return None
+        tld = netloc.rsplit(".", 1)[-1]
+        if len(tld) < 2 or not tld.isalpha():
+            return None
+        base = f"{parsed.scheme}://{netloc}"
+        domain = netloc
+        if domain.startswith("www."):
+            domain = domain[4:]
+        elif domain.startswith("www2."):
+            domain = domain[5:]
+        if domain in SKIP_DOMAINS:
+            return None
+        if base in seen:
+            return None
+        return base
+    except Exception:
+        return None
+
+
+def _extract_ddg_urls(html: str) -> list:
+    """Extracts URLs from DuckDuckGo results (uddg= encoded links)."""
+    seen = set()
+    result = []
+    # Decode HTML entities first
+    try:
+        html = html_module.unescape(html)
+    except Exception:
+        pass
+    # Primary: uddg= redirect parameters
+    for raw in re.findall(r'uddg=([^&\s"\'<>]{12,})', html):
+        try:
+            url = unquote(raw)
+        except Exception:
+            continue
+        base = _valid_base_url(url, seen)
+        if base:
+            seen.add(base)
+            result.append(base)
+    # Fallback: any https href not from duckduckgo
+    for href in re.findall(r'href=["\']?(https?://[^\s"\'<>]{10,})', html):
+        if "duckduckgo.com" in href:
+            continue
+        try:
+            url = unquote(href)
+        except Exception:
+            continue
+        base = _valid_base_url(url, seen)
+        if base:
+            seen.add(base)
+            result.append(base)
+    return result
+
+
+def _extract_urls_from_html(html: str, skip_containing: str = "") -> list:
+    """Generic URL extractor from any search result HTML."""
     try:
         html = html_module.unescape(html)
     except Exception:
@@ -199,56 +261,16 @@ def _extract_urls_from_html(html: str, skip_containing: str = "") -> list:
         if skip_containing and skip_containing in href:
             continue
         try:
-            href = unquote(href)
+            url = unquote(href)
         except Exception:
-            pass
-        # Strip trailing junk chars
-        href = href.rstrip("\"'><).,;")
-        parsed = urlparse(href)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            continue
-        netloc = parsed.netloc
-        # Must have a dot and valid TLD
-        if "." not in netloc or len(netloc) < 5:
-            continue
-        tld = netloc.rsplit(".", 1)[-1].lower()
-        if len(tld) < 2 or not tld.isalpha():
-            continue
-        base = f"{parsed.scheme}://{netloc}"
-        domain = netloc.replace("www.", "").replace("www2.", "")
-        if domain in SKIP_DOMAINS or base in seen:
-            continue
-        if any(x in parsed.path.lower() for x in ["/search", "/wiki/", ".js", ".css", ".png", ".jpg"]):
-            continue
-        seen.add(base)
-        result.append(base)
-    return result
-
-
-def _extract_ddg_urls(html: str) -> list:
-    """Extracts URLs from DuckDuckGo results (uddg= encoded links)."""
-    seen = set()
-    result = []
-    # Primary: uddg= parameters
-    for raw in re.findall(r'uddg=(https?[^&"\'\\s]+)', html):
-        try:
-            url = unquote(raw)
-        except Exception:
-            continue
-        parsed = urlparse(url)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            continue
-        base = f"{parsed.scheme}://{parsed.netloc}"
-        domain = parsed.netloc.replace("www.", "")
-        if domain not in SKIP_DOMAINS and base not in seen:
+            url = href
+        base = _valid_base_url(url, seen)
+        if base:
             seen.add(base)
             result.append(base)
-    # Fallback: generic hrefs
-    for u in _extract_urls_from_html(html, skip_containing="duckduckgo.com"):
-        if u not in seen:
-            seen.add(u)
-            result.append(u)
     return result
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -311,19 +333,16 @@ def _search_yahoo(query: str) -> list:
     seen = set()
     result = []
     for href in raw:
-        parsed = urlparse(href)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            continue
-        base = f"{parsed.scheme}://{parsed.netloc}"
-        domain = parsed.netloc.replace("www.", "")
-        if domain not in SKIP_DOMAINS and base not in seen:
+        base = _valid_base_url(href, seen)
+        if base:
             seen.add(base)
             result.append(base)
     # Also try generic hrefs
     for u in _extract_urls_from_html(html, skip_containing="yahoo.com"):
-        if u not in seen:
-            seen.add(u)
-            result.append(u)
+        base = _valid_base_url(u, seen)
+        if base:
+            seen.add(base)
+            result.append(base)
     return result
 
 
