@@ -516,9 +516,15 @@ function renderCompanySearchResults(data) {
         
         tr.innerHTML = `
             <td><input type="checkbox" class="company-select-checkbox" value="${comp.company_id}" onclick="event.stopPropagation(); handleCompanySelect(this)"></td>
-            <td><strong style="color: var(--text-primary);">${comp.legal_name}</strong></td>
-            <td><code>${comp.domain}</code></td>
-            <td>${comp.hq_country || "Unknown"}</td>
+            <td>
+                <strong style="color: var(--text-primary);">${comp.legal_name}</strong>
+                <div style="font-size:11px; margin-top:2px;">
+                    <a href="https://${comp.domain}" target="_blank" rel="noopener" style="color: var(--accent-color); text-decoration: none;" onclick="event.stopPropagation()">
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:9px;"></i> ${comp.domain}
+                    </a>
+                </div>
+            </td>
+            <td>${comp.hq_city ? comp.hq_city + ', ' : ''}${comp.hq_country || "Unknown"}</td>
             <td>
                 <div>Size: ${comp.employee_range || "N/A"}</div>
                 <div style="font-size:11px; color: var(--text-muted);">${comp.revenue_range || "N/A"}</div>
@@ -529,7 +535,7 @@ function renderCompanySearchResults(data) {
             </td>
             <td><span class="badge badge-score">${comp.confidence_score.toFixed(2)}</span></td>
             <td>
-                <button type="button" class="btn btn-secondary btn-icon" onclick="event.stopPropagation(); inspectCompany('${comp.company_id}')"><i class="fa-solid fa-eye"></i></button>
+                <button type="button" class="btn btn-secondary btn-icon" onclick="event.stopPropagation(); inspectCompany('${comp.company_id}')" title="View Company Details"><i class="fa-solid fa-eye"></i></button>
             </td>
         `;
         tr.addEventListener("click", () => {
@@ -735,70 +741,72 @@ async function inspectCompany(companyId) {
         let employeeListHtml = "";
         if (comp.employees && comp.employees.length > 0) {
             comp.employees.forEach(emp => {
+                const emailStatusColor = emp.email_status === 'verified' ? 'var(--green-text, #4ade80)' : emp.email_status === 'likely_valid' ? '#f59e0b' : 'var(--text-muted)';
+                const emailIcon = emp.email_status === 'verified' ? 'fa-check-circle' : 'fa-circle-question';
                 employeeListHtml += `
-                    <div class="audit-item">
-                        <span class="audit-action">${emp.full_name}</span>
-                        <span class="audit-time">${emp.title}</span>
+                    <div style="background: var(--bg-secondary); border-radius: 10px; padding: 14px; margin-bottom: 10px; border: 1px solid var(--border-subtle);">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0;">${emp.full_name.charAt(0)}</div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: var(--text-primary);">${emp.full_name}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">${emp.title || 'Unknown Role'}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 5px; font-size: 12px; padding-left: 4px;">
+                            ${emp.email ? `
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid ${emailIcon}" style="color: ${emailStatusColor}; font-size: 11px;"></i>
+                                <a href="mailto:${emp.email}" style="color: var(--accent-color); text-decoration: none;">${emp.email}</a>
+                                <span style="color: ${emailStatusColor}; font-size: 10px;">(${emp.email_status})</span>
+                                <button onclick="navigator.clipboard.writeText('${emp.email}'); this.innerHTML='<i class=\'fa-solid fa-check\'></i>'; setTimeout(()=>this.innerHTML='<i class=\'fa-solid fa-copy\'></i>',1500)" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0;" title="Copy email"><i class="fa-solid fa-copy"></i></button>
+                            </div>` : '<div style="color:var(--text-muted); font-size:11px;"><i class="fa-solid fa-envelope-slash"></i> Email not available</div>'}
+                        </div>
                     </div>
                 `;
             });
         } else {
-            employeeListHtml = `<div style="font-size:12px; color:var(--text-muted);">No employee records found in DB</div>`;
+            employeeListHtml = `<div style="font-size:12px; color:var(--text-muted); padding: 12px; text-align: center;"><i class="fa-solid fa-user-slash" style="margin-right:6px;"></i>No employee records found in DB</div>`;
         }
         
-        let crmLinksHtml = "";
-        comp.crm_links.forEach(link => {
-            crmLinksHtml += `<span class="badge badge-score" style="margin-right:6px;"><i class="fa-brands fa-${link.system}"></i> ${link.record_type}: ${link.record_id}</span>`;
-        });
-        
-        let techsHtml = comp.technologies.map(t => `<span class="badge badge-gray" style="margin:2px 4px 2px 0;">${t}</span>`).join("");
+        let techsHtml = (comp.technologies || []).map(t => `<span class="badge badge-gray" style="margin:2px 4px 2px 0;">${t}</span>`).join("");
+        const websiteDisplay = comp.website_url || `https://${comp.domain}`;
+        const linkedinDisplay = comp.linkedin_url;
 
         body.innerHTML = `
-            <div style="text-align: center; margin-bottom: 24px;">
-                <div class="avatar" style="width: 64px; height: 64px; font-size: 24px; margin: 0 auto 12px auto; background: var(--accent-gradient);"><i class="fa-solid fa-building"></i></div>
-                <h2 style="font-size: 20px;">${comp.legal_name}</h2>
-                <p style="color: var(--accent-color); font-weight: 500; font-size: 14px; margin-top: 4px;"><code>${comp.domain}</code></p>
-                <p style="color: var(--text-secondary); font-size: 13px;">${comp.industry || "General Industry"}</p>
-            </div>
-            
-            <div class="card" style="padding: 16px; margin-bottom: 20px;">
-                <h4 style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: var(--text-muted);">Firmographics</h4>
-                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
-                    <div><span style="color: var(--text-secondary);">Website:</span> <a href="${comp.website_url || '#'}" target="_blank" style="color: var(--text-secondary);">${comp.website_url || 'N/A'}</a></div>
-                    <div><span style="color: var(--text-secondary);">HQ Location:</span> ${comp.hq_city ? comp.hq_city + ', ' : ''}${comp.hq_state ? comp.hq_state + ', ' : ''}${comp.hq_country || 'N/A'}</div>
-                    <div><span style="color: var(--text-secondary);">Employees Count:</span> ${comp.employee_range || 'N/A'}</div>
-                    <div><span style="color: var(--text-secondary);">Revenue Range:</span> ${comp.revenue_range || 'N/A'}</div>
-                    <div><span style="color: var(--text-secondary);">Founded Year:</span> ${comp.founded_year || 'N/A'}</div>
-                    <div><span style="color: var(--text-secondary);">Company Type:</span> ${comp.public_private} (${comp.funding_stage || 'no funding stage'})</div>
-                </div>
-            </div>
-            
-            <div class="card" style="padding: 16px; margin-bottom: 20px;">
-                <h4 style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: var(--text-muted);">Technographics Stack</h4>
-                <div style="margin-top: 8px;">
-                    ${techsHtml || '<span style="color:var(--text-muted); font-size:12px;">No technologies detected</span>'}
+            <div style="text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-subtle);">
+                <div style="width: 70px; height: 70px; border-radius: 16px; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 14px auto;"><i class="fa-solid fa-building"></i></div>
+                <h2 style="font-size: 20px; margin-bottom: 6px;">${comp.legal_name}</h2>
+                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 10px;">${comp.industry || "General Industry"} &bull; ${comp.sub_industry || ""}</p>
+                <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                    <a href="${websiteDisplay}" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 5px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 5px 10px; font-size: 12px; color: var(--accent-color); text-decoration: none;">
+                        <i class="fa-solid fa-globe"></i> ${comp.domain}
+                    </a>
+                    ${linkedinDisplay ? `<a href="${linkedinDisplay}" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 5px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 5px 10px; font-size: 12px; color: #0a66c2; text-decoration: none;"><i class="fa-brands fa-linkedin"></i> LinkedIn</a>` : ''}
                 </div>
             </div>
 
-            <div class="card" style="padding: 16px; margin-bottom: 20px;">
-                <h4 style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: var(--text-muted);">CRM Mapped Links</h4>
-                <div style="margin-top: 8px;">
-                    ${crmLinksHtml || "No CRM associations sync'd yet"}
+            <div class="card" style="padding: 16px; margin-bottom: 16px;">
+                <h4 style="margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);"><i class="fa-solid fa-chart-bar" style="margin-right:6px;"></i>Company Details</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+                    <div><span style="color: var(--text-muted); font-size:11px; display:block;">HQ Location</span><span style="font-weight:500;">${comp.hq_city ? comp.hq_city + ', ' : ''}${comp.hq_country || 'N/A'}</span></div>
+                    <div><span style="color: var(--text-muted); font-size:11px; display:block;">Employees</span><span style="font-weight:500;">${comp.employee_range || 'N/A'}</span></div>
+                    <div><span style="color: var(--text-muted); font-size:11px; display:block;">Revenue</span><span style="font-weight:500;">${comp.revenue_range || 'N/A'}</span></div>
+                    <div><span style="color: var(--text-muted); font-size:11px; display:block;">Founded</span><span style="font-weight:500;">${comp.founded_year || 'N/A'}</span></div>
+                    <div><span style="color: var(--text-muted); font-size:11px; display:block;">Type</span><span style="font-weight:500; text-transform: capitalize;">${comp.public_private || 'N/A'}</span></div>
+                    <div><span style="color: var(--text-muted); font-size:11px; display:block;">Funding Stage</span><span style="font-weight:500; text-transform: capitalize;">${(comp.funding_stage || 'N/A').replace('_', ' ')}</span></div>
                 </div>
             </div>
 
-            <div class="card" style="padding: 16px; margin-bottom: 20px;">
-                <h4 style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: var(--text-muted);">Associated Contacts</h4>
-                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-                    ${employeeListHtml}
-                </div>
+            <div class="card" style="padding: 16px; margin-bottom: 16px;">
+                <h4 style="margin-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);"><i class="fa-solid fa-microchip" style="margin-right:6px;"></i>Tech Stack</h4>
+                <div>${techsHtml || '<span style="color:var(--text-muted); font-size:12px;">No technologies detected</span>'}</div>
             </div>
 
-            <div class="card" style="padding: 16px;">
-                <h4 style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; color: var(--text-muted);">Field Provenance Sources</h4>
-                <div class="audit-list">
-                    ${comp.sources.map(s => `<div class="audit-item"><span>Field: <code>${s.field}</code></span> <span>Src: <strong>${s.provider}</strong> (${s.confidence})</span></div>`).join("")}
-                </div>
+            <div class="card" style="padding: 16px; margin-bottom: 16px;">
+                <h4 style="margin-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);">
+                    <i class="fa-solid fa-users" style="margin-right:6px;"></i>Key Contacts (${comp.employees ? comp.employees.length : 0})
+                </h4>
+                <div>${employeeListHtml}</div>
             </div>
         `;
     } catch (err) {
