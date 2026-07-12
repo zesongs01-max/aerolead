@@ -57,11 +57,11 @@ def apply_people_search_filters(db: Session, base_query, query_text: str, filter
         
     # 2c. technologies_any
     if "technologies_any" in filters and filters["technologies_any"]:
-        # Query matching tech edges
-        tech_subs = db.query(TechEdge.company_id).filter(
-            func.lower(TechEdge.tech_slug).in_([t.lower() for t in filters["technologies_any"]])
-        )
-        q = q.filter(Person.company_id.in_(tech_subs))
+        for tech in filters["technologies_any"]:
+            tech_subs = db.query(TechEdge.company_id).filter(
+                func.lower(TechEdge.tech_slug) == tech.lower()
+            )
+            q = q.filter(Person.company_id.in_(tech_subs))
         
     # 2d. seniorities
     if "seniorities" in filters and filters["seniorities"]:
@@ -249,10 +249,11 @@ def apply_company_search_filters(db: Session, base_query, query_text: str, filte
         q = q.filter(Company.industry.in_(filters["industries"]))
 
     if "technologies_any" in filters and filters["technologies_any"]:
-        tech_subs = db.query(TechEdge.company_id).filter(
-            func.lower(TechEdge.tech_slug).in_([t.lower() for t in filters["technologies_any"]])
-        )
-        q = q.filter(Company.company_id.in_(tech_subs))
+        for tech in filters["technologies_any"]:
+            tech_subs = db.query(TechEdge.company_id).filter(
+                func.lower(TechEdge.tech_slug) == tech.lower()
+            )
+            q = q.filter(Company.company_id.in_(tech_subs))
 
     if "only_discovered" in filters and filters["only_discovered"]:
         q = q.filter(Company.company_id.like("co_disc_%"))
