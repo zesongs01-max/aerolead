@@ -3,7 +3,7 @@ import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.orm import Session
 
 from app.config import PROVIDER_QUALITY
@@ -41,7 +41,13 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/")
 def read_root():
-    return FileResponse(os.path.join(static_dir, "index.html"))
+    try:
+        # Read index.html synchronously to prevent thread deadlocks under ASGI-to-WSGI wrappers on PythonAnywhere
+        with open(os.path.join(static_dir, "index.html"), "r", encoding="utf-8") as f:
+            content = f.read()
+        return HTMLResponse(content=content)
+    except Exception as e:
+        return HTMLResponse(content=f"Error loading index.html: {str(e)}", status_code=500)
 
 # Seeding Logic
 def seed_database(db: Session):
