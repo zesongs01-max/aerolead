@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroLead | B2B B2B Lead Intelligence SaaS Platform</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/style.css?v=1.0.3">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-bolt logo-icon"></i>
+                    <span>AeroLead</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active" data-target="view-dashboard">
+                        <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
+                    </li>
+                    <li class="nav-item" data-target="view-search">
+                        <i class="fa-solid fa-magnifying-glass"></i><span>Prospect Search</span>
+                    </li>
+                    <li class="nav-item" data-target="view-enrichment">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i><span>Enrichment Waterfall</span>
+                    </li>
+                    <li class="nav-item" data-target="view-lists">
+                        <i class="fa-solid fa-list-ul"></i><span>Saved Lists</span>
+                    </li>
+                    <li class="nav-item" data-target="view-crm">
+                        <i class="fa-solid fa-rotate"></i><span>CRM Sync</span>
+                    </li>
+                    <li class="nav-item" data-target="view-billing">
+                        <i class="fa-solid fa-credit-card"></i><span>Billing & Credits</span>
+                    </li>
+                    <li class="nav-item" data-target="view-developer">
+                        <i class="fa-solid fa-code"></i><span>Developer Console</span>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="tenant-selector-wrapper">
+                    <label for="tenant-select"><i class="fa-solid fa-building"></i> Active Organization</label>
+                    <select id="tenant-select" class="tenant-select">
+                        <!-- Seeding will populate this -->
+                    </select>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Body -->
+        <main class="app-content">
+            <!-- Header bar -->
+            <header class="app-header">
+                <div class="header-left">
+                    <h1 id="page-title">Dashboard Overview</h1>
+                </div>
+                <div class="header-right">
+                    <div class="credit-badge">
+                        <i class="fa-solid fa-coins credit-icon"></i>
+                        <span class="credit-label">Credits:</span>
+                        <span id="header-credits" class="credit-count">0.0</span>
+                    </div>
+                    <div class="user-profile">
+                        <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                        <span id="header-user-role">Member</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <section class="view-panel active" id="view-dashboard">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="card-icon"><i class="fa-solid fa-id-card"></i></div>
+                        <div class="card-content">
+                            <h3>Total People</h3>
+                            <p id="stat-total-people" class="stat-number">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="card-icon"><i class="fa-solid fa-building"></i></div>
+                        <div class="card-content">
+                            <h3>Companies</h3>
+                            <p id="stat-total-companies" class="stat-number">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="card-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                        <div class="card-content">
+                            <h3>Enrichments Run</h3>
+                            <p id="stat-enrichments" class="stat-number">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="card-icon"><i class="fa-solid fa-list-check"></i></div>
+                        <div class="card-content">
+                            <h3>Saved Lists</h3>
+                            <p id="stat-lists" class="stat-number">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-charts-row">
+                    <div class="chart-panel card">
+                        <h3>Database Industry Coverage</h3>
+                        <div class="chart-container">
+                            <canvas id="industry-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="recent-audit-panel card">
+                        <h3>Recent Actions Audit Trail</h3>
+                        <div class="audit-list" id="dashboard-audit-logs">
+                            <!-- Filled dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Prospect Search View -->
+            <section class="view-panel" id="view-search">
+                <div class="search-view-layout">
+                    <!-- Filters Sidebar -->
+                    <div class="filters-sidebar card">
+                        <h3>Faceted Search Filters</h3>
+                        
+                        <div class="filter-group">
+                            <label><i class="fa-solid fa-location-dot"></i> HQ Location</label>
+                            <div class="checkbox-list" id="facet-locations">
+                                <!-- Checked counts -->
+                            </div>
+                        </div>
+
+                        <div class="filter-group" id="filter-group-seniority">
+                            <label><i class="fa-solid fa-graduation-cap"></i> Seniority Level</label>
+                            <div class="checkbox-list" id="facet-seniorities">
+                                <!-- Checked counts -->
+                            </div>
+                        </div>
+
+                        <div class="filter-group" id="filter-group-email-status">
+                            <label><i class="fa-solid fa-envelope-circle-check"></i> Email Status</label>
+                            <div class="checkbox-list" id="facet-email-status">
+                                <!-- Checked counts -->
+                            </div>
+                        </div>
+
+                        <div class="filter-group" id="filter-group-employees" style="display: none;">
+                            <label><i class="fa-solid fa-users"></i> Employee Size</label>
+                            <div class="checkbox-list" id="facet-employee-ranges">
+                                <!-- Checked counts -->
+                            </div>
+                        </div>
+
+                        <div class="filter-group" id="filter-group-revenue" style="display: none;">
+                            <label><i class="fa-solid fa-money-bill-wave"></i> Revenue Range</label>
+                            <div class="checkbox-list" id="facet-revenue-ranges">
+                                <!-- Checked counts -->
+                            </div>
+                        </div>
+
+                        <div class="filter-group" id="filter-group-industries">
+                            <label><i class="fa-solid fa-industry"></i> Industries</label>
+                            <div class="checkbox-list" id="facet-industries">
+                                <!-- Checked counts -->
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <label><i class="fa-solid fa-laptop-code"></i> Technologies</label>
+                            <div class="tech-tags-input">
+                                <input type="text" id="search-tech-input" placeholder="Add tech filter (e.g. React)">
+                                <button type="button" id="btn-add-tech-filter"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="active-tech-filters" id="search-active-techs"></div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-secondary btn-full" id="btn-clear-filters">Clear All Filters</button>
+                    </div>
+
+                    <!-- Search Results Grid -->
+                    <div class="search-results-container">
+                        <div class="tabs" style="margin-bottom: 0px;">
+                            <button class="tab-btn active" id="search-tab-people">People Search</button>
+                            <button class="tab-btn" id="search-tab-companies">Company Search</button>
+                        </div>
+                        <div class="search-bar-row">
+                            <div class="search-input-wrapper">
+                                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                <input type="text" id="search-query" placeholder="Search by name, title, company, or industry...">
+                            </div>
+                            <button type="button" class="btn btn-primary" id="btn-search-trigger">Search</button>
+                        </div>
+                        
+                        <div class="results-actions-row">
+                            <div class="results-count" id="search-results-count">Showing 0 results</div>
+                            <div class="bulk-actions">
+                                <button type="button" class="btn btn-secondary" id="btn-bulk-save" disabled><i class="fa-solid fa-bookmark"></i> Save to List</button>
+                                <button type="button" class="btn btn-secondary" id="btn-bulk-crm" disabled><i class="fa-solid fa-rotate"></i> Sync to CRM</button>
+                            </div>
+                        </div>
+
+                        <div class="results-table-card card">
+                            <!-- People Table -->
+                            <table class="data-table" id="search-results-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;"><input type="checkbox" id="select-all-results"></th>
+                                        <th>Name / Contact</th>
+                                        <th>Title / Company</th>
+                                        <th>Location</th>
+                                        <th>Contactability</th>
+                                        <th>Confidence</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="search-results-tbody">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+
+                            <!-- Companies Table -->
+                            <table class="data-table" id="company-results-table" style="display: none;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;"><input type="checkbox" id="select-all-companies"></th>
+                                        <th>Company Name</th>
+                                        <th>Domain / Website</th>
+                                        <th>Location</th>
+                                        <th>Employees / Revenue</th>
+                                        <th>Industry / Technologies</th>
+                                        <th>Confidence</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="company-results-tbody">
+                                    <!-- Dynamic company rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Enrichment Waterfall View -->
+            <section class="view-panel" id="view-enrichment">
+                <div class="enrich-layout">
+                    <div class="enrich-config-card card">
+                        <h3>Enrichment Settings</h3>
+                        <p class="section-desc">AeroLead uses an enrichment waterfall. We check legal registries first, query technographics, and resolve contact info via PDL & Hunter.</p>
+                        
+                        <div class="waterfall-visual">
+                            <div class="step"><span class="step-num">1</span> <span class="step-lbl">OpenCorporates / SEC</span></div>
+                            <div class="connector"><i class="fa-solid fa-arrow-down"></i></div>
+                            <div class="step"><span class="step-num">2</span> <span class="step-lbl">BuiltWith / Wappalyzer</span></div>
+                            <div class="connector"><i class="fa-solid fa-arrow-down"></i></div>
+                            <div class="step"><span class="step-num">3</span> <span class="step-lbl">People Data Labs (PDL)</span></div>
+                            <div class="connector"><i class="fa-solid fa-arrow-down"></i></div>
+                            <div class="step"><span class="step-num">4</span> <span class="step-lbl">Hunter.io (Email Verifier)</span></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Survivorship Conflict Resolution</label>
+                            <select id="enrich-conflict-policy" class="form-control">
+                                <option value="preserve">Preserve Manual Edits (Recommended)</option>
+                                <option value="overwrite">Overwrite Everything with Fresh Payload</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="enrich-actions card">
+                        <h3>Trigger Profile Enrichment</h3>
+                        
+                        <div class="tabs">
+                            <button class="tab-btn active" data-tab="tab-enrich-single">Single Enrich</button>
+                            <button class="tab-btn" data-tab="tab-enrich-bulk">CSV / List Import</button>
+                        </div>
+
+                        <div class="tab-content active" id="tab-enrich-single">
+                            <form id="form-enrich-single">
+                                <div class="form-row">
+                                    <div class="form-group col-6">
+                                        <label>Full Name</label>
+                                        <input type="text" id="enrich-name" class="form-control" placeholder="e.g. John Smith" required>
+                                    </div>
+                                    <div class="form-group col-6">
+                                        <label>Company Domain</label>
+                                        <input type="text" id="enrich-domain" class="form-control" placeholder="e.g. stripe.com" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-6">
+                                        <label>LinkedIn Profile URL (Optional)</label>
+                                        <input type="text" id="enrich-linkedin" class="form-control" placeholder="e.g. https://linkedin.com/in/john">
+                                    </div>
+                                    <div class="form-group col-6">
+                                        <label>Email Match Key (Optional)</label>
+                                        <input type="email" id="enrich-email" class="form-control" placeholder="e.g. john.smith@stripe.com">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-full"><i class="fa-solid fa-wand-magic-sparkles"></i> Run Waterfall Enrichment (1 Credit)</button>
+                            </form>
+
+                            <div id="enrich-result-panel" class="enrich-result-box" style="display: none;">
+                                <!-- Enriched display -->
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="tab-enrich-bulk">
+                            <div class="drag-drop-zone" id="csv-drop-zone">
+                                <i class="fa-solid fa-file-csv upload-icon"></i>
+                                <p>Drag & drop your leads CSV here, or <span>browse files</span></p>
+                                <input type="file" id="csv-file-input" style="display: none;" accept=".csv">
+                            </div>
+                            <div class="csv-preview-container" id="csv-preview-box" style="display: none;">
+                                <h4>CSV Upload Preview (Simulated)</h4>
+                                <table class="data-table small-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Domain</th>
+                                            <th>Email</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="csv-preview-tbody"></tbody>
+                                </table>
+                                <button type="button" class="btn btn-primary btn-full mt-10" id="btn-process-csv">Process List & Enrich</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Saved Lists View -->
+            <section class="view-panel" id="view-lists">
+                <div class="lists-view-layout">
+                    <div class="lists-sidebar card">
+                        <div class="sidebar-title-row">
+                            <h3>Saved Audiences</h3>
+                            <button type="button" class="btn-icon" id="btn-new-list-modal"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <ul class="lists-menu" id="saved-lists-ul">
+                            <!-- Filled dynamically -->
+                        </ul>
+                    </div>
+                    
+                    <div class="list-details-panel card">
+                        <div class="list-header-row">
+                            <div>
+                                <h3 id="active-list-title">Select an Audience List</h3>
+                                <p id="active-list-meta" class="section-desc">Select a saved list from the side panel to view lead details.</p>
+                            </div>
+                            <button type="button" class="btn btn-primary" id="btn-sync-active-list" style="display: none;"><i class="fa-solid fa-rotate"></i> Sync List to CRM</button>
+                        </div>
+
+                        <table class="data-table" id="list-leads-table" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Title</th>
+                                    <th>Company</th>
+                                    <th>Email</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-leads-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CRM Sync Integration View -->
+            <section class="view-panel" id="view-crm">
+                <div class="crm-grid">
+                    <!-- Config Box -->
+                    <div class="crm-connect-box card">
+                        <h3>Connect GTM Integrations</h3>
+                        <div class="connectors-row">
+                            <div class="crm-card active-crm" id="crm-card-salesforce" data-crm="salesforce">
+                                <div class="crm-logo"><i class="fa-brands fa-salesforce"></i></div>
+                                <h4>Salesforce</h4>
+                                <span class="badge badge-gray" id="sf-status-badge">Disconnected</span>
+                            </div>
+                            <div class="crm-card" id="crm-card-hubspot" data-crm="hubspot">
+                                <div class="crm-logo"><i class="fa-brands fa-hubspot"></i></div>
+                                <h4>HubSpot</h4>
+                                <span class="badge badge-gray" id="hs-status-badge">Disconnected</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-20">
+                            <label>Sync Conflict Policy</label>
+                            <select id="crm-conflict-policy" class="form-control">
+                                <option value="preserve">Preserve Local Values (Default)</option>
+                                <option value="overwrite">Overwrite CRM values with AeroLead</option>
+                            </select>
+                        </div>
+                        
+                        <button type="button" class="btn btn-primary btn-full mt-10" id="btn-save-crm-config">Apply Configuration</button>
+                    </div>
+
+                    <!-- Sync Manager Box -->
+                    <div class="crm-sync-box card">
+                        <h3>CRM Operations & Sync Logs</h3>
+                        <div class="sync-actions-panel">
+                            <p class="section-desc">Trigger a manual synchronization of resolved profiles and contact details to your connected CRM account.</p>
+                            <button type="button" class="btn btn-primary" id="btn-crm-sync-trigger"><i class="fa-solid fa-rotate"></i> Start Synchronization</button>
+                        </div>
+
+                        <h4 class="mt-20">Recent Sync Log Runs</h4>
+                        <div class="crm-logs-list" id="crm-sync-logs-list">
+                            <!-- Filled dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mapping Box -->
+                <div class="card mt-20">
+                    <h3>Field Mapping Schema Configuration</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>AeroLead Field</th>
+                                <th>Target Field Identifier</th>
+                                <th>Overwrite Rule</th>
+                            </tr>
+                        </thead>
+                        <tbody id="crm-mapping-tbody">
+                            <!-- Populated based on active CRM -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Billing & Credits View -->
+            <section class="view-panel" id="view-billing">
+                <div class="billing-grid">
+                    <div class="pricing-card card highlight-pricing">
+                        <h3>AeroLead Pro Seat</h3>
+                        <div class="price-val">$119<span>/mo/seat</span></div>
+                        <p class="tier-desc">Best for growth and outbound prospecting teams.</p>
+                        <hr>
+                        <ul class="features-list">
+                            <li><i class="fa-solid fa-check text-indigo"></i> Unlimited prospecting search</li>
+                            <li><i class="fa-solid fa-check text-indigo"></i> 2,000 monthly enrichment credits</li>
+                            <li><i class="fa-solid fa-check text-indigo"></i> Advanced field-level confidence</li>
+                            <li><i class="fa-solid fa-check text-indigo"></i> Full CRM sync templates</li>
+                            <li><i class="fa-solid fa-check text-indigo"></i> Developer Console & Public API</li>
+                        </ul>
+                        <button type="button" class="btn btn-primary btn-full mt-20" id="btn-upgrade-pro">Select Pro Plan</button>
+                    </div>
+
+                    <div class="billing-details card">
+                        <h3>Current Subscription & Limits</h3>
+                        
+                        <div class="usage-meter mt-10">
+                            <div class="meter-info">
+                                <span>Monthly Credits Used</span>
+                                <span id="billing-credits-used-ratio">0 / 100</span>
+                            </div>
+                            <div class="meter-bar"><div class="meter-fill" id="billing-credits-fill" style="width: 0%;"></div></div>
+                        </div>
+
+                        <div class="usage-meter mt-20">
+                            <div class="meter-info">
+                                <span>API Call Limit</span>
+                                <span id="billing-api-used-ratio">0 / 500</span>
+                            </div>
+                            <div class="meter-bar"><div class="meter-fill" id="billing-api-fill" style="width: 0%;"></div></div>
+                        </div>
+
+                        <h3 class="mt-30">Purchase Additional Credits (Usage Billing)</h3>
+                        <div class="credits-packages">
+                            <div class="pack" data-amount="100">
+                                <h4>100 Credits</h4>
+                                <p>$10.00</p>
+                            </div>
+                            <div class="pack" data-amount="500">
+                                <h4>500 Credits</h4>
+                                <p>$45.00</p>
+                            </div>
+                            <div class="pack" data-amount="1000">
+                                <h4>1,000 Credits</h4>
+                                <p>$80.00</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-full mt-10" id="btn-buy-credits" disabled>Select Package</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Developer Console View -->
+            <section class="view-panel" id="view-developer">
+                <div class="dev-layout">
+                    <!-- Token Manager -->
+                    <div class="dev-token-box card">
+                        <h3>Public API Key</h3>
+                        <p class="section-desc">Generate an API token to access the search and enrichment waterfall from scripts or CRM webhooks.</p>
+                        
+                        <div class="token-input-group mt-20">
+                            <input type="text" id="dev-api-key-display" class="form-control code-font" placeholder="No API key generated" readonly>
+                            <button type="button" class="btn btn-primary" id="btn-generate-key">Generate Key</button>
+                        </div>
+                        <p class="small-warning mt-10"><i class="fa-solid fa-circle-exclamation"></i> Keep your API key confidential. This key maps directly to your organization credit balance.</p>
+                    </div>
+
+                    <!-- Interactive Console Docs -->
+                    <div class="dev-docs-box card">
+                        <h3>Interactive Endpoint Explorer</h3>
+                        
+                        <div class="endpoint-docs">
+                            <!-- Endpoint 1 -->
+                            <div class="endpoint">
+                                <div class="endpoint-header">
+                                    <span class="method post-badge">POST</span>
+                                    <span class="url">/v1/search/people</span>
+                                </div>
+                                <div class="endpoint-body">
+                                    <p>Query contact database using faceted filters.</p>
+                                    <pre class="code-pre">
+curl -X POST http://127.0.0.1:8000/v1/search/people \
+  -H "X-API-Key: <span class="placeholder-key">YOUR_KEY</span>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "marketing ops",
+    "filters": {
+      "company_locations": ["United States"],
+      "seniorities": ["director"]
+    }
+  }'</pre>
+                                </div>
+                            </div>
+
+                            <!-- Endpoint 2 -->
+                            <div class="endpoint">
+                                <div class="endpoint-header">
+                                    <span class="method post-badge">POST</span>
+                                    <span class="url">/v1/enrich/person</span>
+                                </div>
+                                <div class="endpoint-body">
+                                    <p>Run contact through enrichment waterfall.</p>
+                                    <pre class="code-pre">
+curl -X POST http://127.0.0.1:8000/v1/enrich/person \
+  -H "X-API-Key: <span class="placeholder-key">YOUR_KEY</span>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": {
+      "full_name": "Jane Doe",
+      "company_domain": "acme.com"
+    }
+  }'</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Lead Profile Detail Drawer (Slides from Right) -->
+    <div id="profile-drawer" class="profile-drawer">
+        <div class="drawer-header">
+            <h3>Contact Intelligence Profile</h3>
+            <button class="close-btn" id="btn-close-drawer"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="drawer-body" id="profile-drawer-body">
+            <!-- Filled dynamically -->
+        </div>
+    </div>
+
+    <!-- Modal for new List -->
+    <div id="new-list-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Create New Audience List</h3>
+                <button type="button" class="close-btn" id="btn-close-list-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-create-list">
+                    <div class="form-group">
+                        <label>List Name</label>
+                        <input type="text" id="modal-list-name" class="form-control" placeholder="e.g. Mid-Market Sales Directors" required>
+                    </div>
+                    <div class="form-group">
+                        <label>List Type</label>
+                        <select id="modal-list-type" class="form-control">
+                            <option value="people">People Accounts</option>
+                            <option value="companies">Company Accounts</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full mt-10">Create List</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script loading -->
+    <script src="/static/app.js?v=1.0.3"></script>
+</body>
+</html>
